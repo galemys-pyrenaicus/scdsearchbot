@@ -2,12 +2,24 @@ import telebot
 import sqlite3
 from telebot import types
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+import logging
+
+logformat = ['%(asctime)s [%(levelname)s] - %(message)s', '%d-%b-%y %H:%M:%S']
+logging.basicConfig(filename='/var/log/scdsearch.log', format=logformat[0], level='WARNING', datefmt=logformat[1])
 
 name = '';
 
-f = open('token', 'r')
-token = f.readline()
-bot = telebot.TeleBot(token)
+try:
+    f = open('token', 'r')
+    token = f.readline()
+    bot = telebot.TeleBot(token)
+except:
+    logging.error("Can't read the token")
+
+try:
+    f2 = open('scddata-2.0.sql', 'r')
+except:
+    logging.error("Can't open SCDDATA")
 
 
 @bot.message_handler(commands=['start'])
