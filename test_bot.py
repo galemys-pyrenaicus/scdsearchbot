@@ -24,22 +24,19 @@ except:
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    bot.send_message(message.from_user.id, "Dance name?");
-    bot.register_next_step_handler(message, get_name);
-
-def get_name(message): #получаем фамилию
-    global name;
-    name = message.text;
-    bot.send_message(message.from_user.id, "Looking for " + name + "...");
-    get_list(message)
-#    bot.register_next_step_handler(message, get_list);
-
-
+    bot.register_next_step_handler(message, get_name)
 
 @bot.message_handler(content_types=['text'])
+def get_name(message): # получаем название танца
+    global name
+    name = message.text
+    bot.send_message(message.from_user.id, "Looking for " + name + "...")
+    get_list(message)
+
+
 def get_list(message):
-    global name;
-    lst = [];
+    global name
+    lst = []
     msg = ""
     i = 0
     button_list = []
@@ -49,15 +46,16 @@ def get_list(message):
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
     like = " LIKE '%" + name.upper() + "%'"
-    markup = types.InlineKeyboardMarkup();
+    markup = types.InlineKeyboardMarkup()
     for row in cursor.execute("SELECT name, id FROM dance WHERE ucname" + like):
         i = i + 1
         lst.append(row)
         msg = msg + str(i) + " : " + str(row[0]) + '\n'
         button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
     reply_markup = InlineKeyboardMarkup(
-    build_menu(button_list, n_cols=1))  # n_cols = 1 is for single column and mutliple rows
+    build_menu(button_list, n_cols=1))
     bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
@@ -71,8 +69,7 @@ def callback_worker(call):
         print(row)
         bot.send_message(call.message.chat.id, row[7])
 
-
-def build_menu(buttons,n_cols,header_buttons=None,footer_buttons=None):
+def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
   menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
   if header_buttons:
     menu.insert(0, header_buttons)
