@@ -63,9 +63,17 @@ def callback_worker(call):
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
     where = " WHERE dance_id=" + call.data
-    for row in cursor.execute("SELECT * FROM dancecrib" + where):
+    dancelist = cursor.execute("SELECT id, text FROM dancecrib" + where)
+    query = """ SELECT dancecribsource.name 
+                FROM dancecribsource
+                JOIN dancecrib
+                ON dancecrib.source_id = dancecribsource.id
+                WHERE dancecrib.id = '"""
+    for row in dancelist:
+        cursor.execute(query + str(row[0]) + '\'')
+        cribsrc = cursor.fetchone()
         print(row)
-        bot.send_message(call.message.chat.id, row[7])
+        bot.send_message(call.message.chat.id, "Source: " + cribsrc[0] + '\n\n' + row[1])
 
 def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
   menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
