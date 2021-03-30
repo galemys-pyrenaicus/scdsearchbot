@@ -3,24 +3,30 @@ import sqlite3
 from telebot import types
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
+import sys
 
 logformat = ['%(asctime)s [%(levelname)s] - %(message)s', '%d-%b-%y %H:%M:%S']
-logging.basicConfig(filename='/var/log/scdsearch.log', format=logformat[0], level='WARNING', datefmt=logformat[1])
+logging.basicConfig(filename='/var/log/scdsearch.log', format=logformat[0], level='INFO', datefmt=logformat[1])
 
-name = '';
+name = ''
+scddata = '/opt/scddatabot/scddata-2.0.sql'
+tokenpath = '/opt/scddatabot/token'
 
 try:
-    f = open('token', 'r')
+    f = open(tokenpath, 'r')
     token = f.readline()
-    bot = telebot.TeleBot(token)
+    bot = telebot.TeleBot(token.rstrip())
 except:
     logging.error("Can't read the token")
+    sys.exit()
 
 try:
-    f2 = open('scddata-2.0.sql', 'r')
+    f2 = open(scddata, 'r')
 except:
     logging.error("Can't open SCDDATA")
+    sys.exit()
 
+logging.info("Service started")
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -42,7 +48,7 @@ def get_list(message):
     button_list = []
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
-    sql_file = open("scddata-2.0.sql")
+    sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
     like = " LIKE '%" + name.upper() + "%'"
@@ -61,7 +67,7 @@ def get_list(message):
 def callback_worker(call):
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
-    sql_file = open("scddata-2.0.sql")
+    sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
     where = " WHERE dance_id=" + call.data
