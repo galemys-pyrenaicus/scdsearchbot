@@ -9,8 +9,8 @@ logformat = ['%(asctime)s [%(levelname)s] - %(message)s', '%d-%b-%y %H:%M:%S']
 logging.basicConfig(filename='/var/log/scdsearch.log', format=logformat[0], level='INFO', datefmt=logformat[1])
 
 name = ''
-scddata = '/opt/scddatabot/scddata-2.0.sql'
-tokenpath = '/opt/scddatabot/token'
+scddata = '/opt/scdsearchbot/scddata-2.0.sql'
+tokenpath = '/opt/scdsearchbot/token'
 
 try:
     f = open(tokenpath, 'r')
@@ -54,9 +54,6 @@ def get_list(message):
     like = " LIKE '%" + name.upper() + "%'"
     markup = types.InlineKeyboardMarkup()
     for row in cursor.execute("SELECT name, id FROM dance WHERE ucname" + like):
-        i = i + 1
-        lst.append(row)
-        msg = msg + str(i) + " : " + str(row[0]) + '\n'
         button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
     reply_markup = InlineKeyboardMarkup(
     build_menu(button_list, n_cols=1))
