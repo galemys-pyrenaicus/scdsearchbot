@@ -1,6 +1,5 @@
 import telebot
 import sqlite3
-from telebot import types
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 import sys
@@ -42,9 +41,6 @@ def get_name(message): # получаем название танца
 
 def get_list(message):
     global name
-    lst = []
-    msg = ""
-    i = 0
     button_list = []
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
@@ -52,7 +48,6 @@ def get_list(message):
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
     like = " LIKE '%" + name.upper() + "%'"
-    markup = types.InlineKeyboardMarkup()
     for row in cursor.execute("SELECT name, id FROM dance WHERE ucname" + like):
         button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
     reply_markup = InlineKeyboardMarkup(
