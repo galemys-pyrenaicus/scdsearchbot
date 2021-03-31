@@ -47,11 +47,14 @@ def get_list(message):
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
-    for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
-        button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
-    reply_markup = InlineKeyboardMarkup(
-    build_menu(button_list, n_cols=1))
-    bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
+    try:
+        for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
+            button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
+        reply_markup = InlineKeyboardMarkup(
+        build_menu(button_list, n_cols=1))
+        bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
+    except:
+        bot.send_message(message.from_user.id, 'Too many dances, please specify the search query')
 
 
 @bot.callback_query_handler(func=lambda call: True)
