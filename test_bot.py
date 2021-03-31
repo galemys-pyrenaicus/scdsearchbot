@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import telebot
 import sqlite3
 import requests
@@ -11,6 +13,7 @@ logging.basicConfig(filename='/var/log/scdsearch.log', format=logformat[0], leve
 name = ''
 scddata = '/opt/scdsearchbot/scddata-2.0.sql'
 tokenpath = '/opt/scdsearchbot/token'
+QIpath = '/opt/scdsearchbot/'
 
 try:
     f = open(tokenpath, 'r')
@@ -50,6 +53,9 @@ def get_list(message):
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
+    QI_search = open(QIpath+'QI_search', 'a')
+    QI_search.write(str(datetime.now()) + ' : ' + name + '\n')
+    QI_search.close()
     try:
         for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
             button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
@@ -63,7 +69,7 @@ def get_list(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
     dinfo, dcribs = get_data(call.data)
-    dinfo_msg = "\nAuthor:" + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + dinfo[3]
+    dinfo_msg = dinfo[5] + "\n\nAuthor:" + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + dinfo[3]
     if dinfo[4]:
         dinfo_msg = dinfo_msg + "\nMedley: " + dinfo[4]
     bot.send_message(call.message.chat.id, dinfo_msg)
@@ -75,6 +81,9 @@ def callback_worker(call):
             bot.send_message(call.message.chat.id, crib_msg)
     png_url = get_image(str(call.data))
     if png_url: bot.send_photo(call.message.chat.id, png_url)
+    QI_result = open(QIpath+'QI_result', 'a')
+    QI_result.write(str(datetime.now()) + ' : ' + dinfo[5] + '\n')
+    QI_result.close()
 
 
 def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
@@ -102,6 +111,7 @@ def get_data(danceid):
                             join dancecrib
                             on dancecrib.source_id = dancecribsource.id
                             where dancecrib.id IN (%s)"""
+    dname_query = "select name from dance where dance.id = '%s'" % danceid
     author_query = "select person.name from dance join person on dance.devisor_id = person.id where dance.id = '%s'" % danceid
     type_query = "select dancetype.name, dancetype.id from dance join dancetype on dance.type_id = dancetype.id where dance.id = '%s'" % danceid
     set_query = "select shape.name from dance join shape on dance.shape_id = shape.id where dance.id = '%s'" % danceid
@@ -116,10 +126,10 @@ def get_data(danceid):
     dtype = cursor.execute(type_query).fetchall()
     dset = cursor.execute(set_query).fetchall()
     dcpls = cursor.execute(cpls_query).fetchall()
-    print (dtype)
+    dname = cursor.execute(dname_query).fetchall()
     if (dtype[0][1] == 4):
         medley = cursor.execute(medley_query).fetchall()[0][0]
-    dance_info = (dauthor[0][0], dtype[0][0], dset[0][0], dcpls[0][0], medley)
+    dance_info = (dauthor[0][0], dtype[0][0], dset[0][0], dcpls[0][0], medley, dname[0][0])
     i = 0
     for row in dancelist:  # ---------Concatenating crib texts and crib sources to one list
         cribs.append((cribsources[i][0], row[1]))
