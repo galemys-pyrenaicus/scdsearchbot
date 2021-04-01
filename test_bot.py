@@ -61,7 +61,10 @@ def get_list(message):
             button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
         reply_markup = InlineKeyboardMarkup(
         build_menu(button_list, n_cols=1))
-        bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
+        if not button_list:
+            bot.send_message(message.from_user.id, 'No dance found. Please, try again')
+        else:
+            bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
     except:
         bot.send_message(message.from_user.id, 'Too many dances, please specify the search query')
 
