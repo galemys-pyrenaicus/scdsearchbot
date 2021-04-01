@@ -53,9 +53,9 @@ def get_list(message):
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
-    QI_search = open(QIpath+'QI_search', 'a')
-    QI_search.write(str(datetime.now()) + ' : ' + name + '\n')
-    QI_search.close()
+    qi_search = open(QIpath+'QI_search', 'a')
+    qi_search.write(str(datetime.now()) + ' : ' + name + '\n')
+    qi_search.close()
     try:
         for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
             button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
@@ -73,17 +73,12 @@ def callback_worker(call):
     if dinfo[4]:
         dinfo_msg = dinfo_msg + "\nMedley: " + dinfo[4]
     bot.send_message(call.message.chat.id, dinfo_msg)
-    if not dcribs:
-        bot.send_message(call.message.chat.id, 'No cribs available')
-    else:
-        for row in dcribs:
-            crib_msg = "Source: " + row[0] + '\n\n' + row[1]
-            bot.send_message(call.message.chat.id, crib_msg)
+    bot.send_message(call.message.chat.id, get_crib(dcribs))
     png_url = get_image(str(call.data))
     if png_url: bot.send_photo(call.message.chat.id, png_url)
-    QI_result = open(QIpath+'QI_result', 'a')
-    QI_result.write(str(datetime.now()) + ' : ' + dinfo[5] + '\n')
-    QI_result.close()
+    qi_result = open(QIpath+'QI_result', 'a')
+    qi_result.write(str(datetime.now()) + ' : ' + dinfo[5] + '\n')
+    qi_result.close()
 
 
 def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
@@ -93,6 +88,7 @@ def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
   if footer_buttons:
     menu.append(footer_buttons)
   return menu
+
 
 def get_data(danceid):
     connection = sqlite3.connect(":memory:")
@@ -139,11 +135,24 @@ def get_data(danceid):
 
 def get_image(id):
     png_url = "https://my.strathspey.org/dd/diagram/%s/" + str(id) + "/?f=png&w=800"
-    for type in ['kr', 'scddb']:
-        request = requests.get(png_url % type)
+    for ctype in ['kr', 'scddb']:
+        request = requests.get(png_url % ctype)
         if (request.status_code == 200):
-            return png_url % type
+            return png_url % ctype
     return False
+
+
+def get_crib(cribs):
+    if not cribs:
+        return 'No cribs available'
+    i = 0
+    for row in cribs:
+        if row[i][0] == 'E-cribs':
+            return "Source: " + row[0] + '\n\n' + row[1]
+        if row[i][0] == 'MiniCribs':
+            return "Source: " + row[0] + '\n\n' + row[1]
+        else:
+            return "Source: " + row[0] + '\n\n' + row[1]
 
 
 bot.polling()
