@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 import telebot
 import sqlite3
@@ -72,11 +73,14 @@ def get_list(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
     dinfo, dcribs = get_data(call.data)
-    dinfo_msg = dinfo[5] + "\n\nAuthor:" + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + dinfo[3]
+    dinfo_msg = dinfo[5] + "\n\nAuthor: " + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + dinfo[3]
     if dinfo[4]:
         dinfo_msg = dinfo_msg + "\nMedley: " + dinfo[4]
-    bot.send_message(call.message.chat.id, dinfo_msg)
-    bot.send_message(call.message.chat.id, get_crib(dcribs))
+    for symb in ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']:
+        dinfo_msg = dinfo_msg.replace(symb, "\\%s" % symb)
+    dinfo_msg = re.sub(r'(.*\n\n)', r'*\1*', dinfo_msg)
+    bot.send_message(call.message.chat.id, dinfo_msg, parse_mode='MarkdownV2')
+    bot.send_message(call.message.chat.id, get_nice_crib(dcribs), parse_mode='MarkdownV2')
     png_url = get_image(str(call.data))
     if png_url: bot.send_photo(call.message.chat.id, png_url)
     qi_result = open(QIpath+'QI_result', 'a')
@@ -156,6 +160,16 @@ def get_crib(cribs):
             return "Source: " + row[0] + '\n\n' + row[1]
         else:
             return "Source: " + row[0] + '\n\n' + row[1]
+
+def get_nice_crib(cribs):
+    crib = get_crib(cribs)
+    for symb in ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']:
+        crib = crib.replace(symb, "\\%s" % symb)
+    crib = re.sub(r'([0-9].*::)(.*)', r'*\1*\2', crib)
+    crib = re.sub(r'(\\\_while\\\_\\\{[0-9]*\\\})', r'*\1*', crib)
+    crib = re.sub(r'(\\\_while\\\{[0-9]*\\\}\\\_)', r'*\1*', crib)
+    print(crib)
+    return crib
 
 
 bot.polling()
