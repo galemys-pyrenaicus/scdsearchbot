@@ -56,7 +56,7 @@ def get_list(message):
     button_list = []
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
-    cursor.execute("PRAGMA read_committed = true;");
+    cursor.execute("PRAGMA read_committed = true;")
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
@@ -115,6 +115,7 @@ def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
 def get_data(danceid):
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
+    cursor.execute("PRAGMA read_committed = true;")
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
