@@ -37,9 +37,13 @@ logging.info("Service started")
 def start_message(message):
     bot.register_next_step_handler(message, get_name)
 
+@bot.message_handler(commands=['help'])
+def start_message(message):
+    bot.send_message(message.from_user.id, 'This bot is doing some staff')
+
 
 @bot.message_handler(content_types=['text'])
-def get_name(message): # получаем название танца
+def get_name(message):  # получаем название танца
     global name
     name = message.text
     bot.send_message(message.from_user.id, "Looking for " + name + "...")
@@ -51,6 +55,7 @@ def get_list(message):
     button_list = []
     connection = sqlite3.connect(":memory:")
     cursor = connection.cursor()
+    cursor.execute("PRAGMA read_committed = true;");
     sql_file = open(scddata)
     sql_as_string = sql_file.read()
     cursor.executescript(sql_as_string)
@@ -60,30 +65,38 @@ def get_list(message):
     try:
         for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
             button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
-        reply_markup = InlineKeyboardMarkup(
-        build_menu(button_list, n_cols=1))
+        reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
+        print(button_list[0].callback_data)
         if not button_list:
             bot.send_message(message.from_user.id, 'No dance found. Please, try again')
         else:
-            bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
-    except:
+            if len(button_list) == 1:
+                send_res_msg(button_list[0].callback_data, message.from_user.id)
+            else:
+                bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
+    except Exception as e:
+        print(str(e))
         bot.send_message(message.from_user.id, 'Too many dances, please specify the search query')
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-    dinfo, dcribs = get_data(call.data)
-    dinfo_msg = dinfo[5] + "\n\nAuthor: " + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + dinfo[3]
+    send_res_msg(call.data, call.from_user.id)
+
+def send_res_msg(danceid, chatid):
+    dinfo, dcribs = get_data(danceid)
+    dinfo_msg = dinfo[5] + "\n\nAuthor: " + dinfo[0] + "\nType: " + dinfo[1] + "\nSet: " + dinfo[2] + "\nCouples: " + \
+                dinfo[3]
     if dinfo[4]:
         dinfo_msg = dinfo_msg + "\nMedley: " + dinfo[4]
     for symb in ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']:
         dinfo_msg = dinfo_msg.replace(symb, "\\%s" % symb)
     dinfo_msg = re.sub(r'(.*\n\n)', r'*\1*', dinfo_msg)
-    bot.send_message(call.message.chat.id, dinfo_msg, parse_mode='MarkdownV2')
-    bot.send_message(call.message.chat.id, get_nice_crib(dcribs), parse_mode='MarkdownV2')
-    png_url = get_image(str(call.data))
-    if png_url: bot.send_photo(call.message.chat.id, png_url)
-    qi_result = open(QIpath+'QI_result', 'a')
+    bot.send_message(chatid, dinfo_msg, parse_mode='MarkdownV2')
+    bot.send_message(chatid, get_nice_crib(dcribs), parse_mode='MarkdownV2')
+    png_url = get_image(str(danceid))
+    if png_url: bot.send_photo(chatid, png_url)
+    qi_result = open(QIpath + 'QI_result', 'a')
     qi_result.write(str(datetime.now()) + ' : ' + dinfo[5] + '\n')
     qi_result.close()
 
