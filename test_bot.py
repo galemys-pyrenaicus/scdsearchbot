@@ -37,6 +37,7 @@ logging.info("Service started")
 def start_message(message):
     bot.register_next_step_handler(message, get_name)
 
+
 @bot.message_handler(commands=['help'])
 def start_message(message):
     bot.send_message(message.from_user.id, 'This bot is doing some staff')
@@ -82,6 +83,7 @@ def get_list(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
     send_res_msg(call.data, call.from_user.id)
+
 
 def send_res_msg(danceid, chatid):
     dinfo, dcribs = get_data(danceid)
@@ -143,7 +145,7 @@ def get_data(danceid):
     dset = cursor.execute(set_query).fetchall()
     dcpls = cursor.execute(cpls_query).fetchall()
     dname = cursor.execute(dname_query).fetchall()
-    if (dtype[0][1] == 4):
+    if dtype[0][1] == 4:
         medley = cursor.execute(medley_query).fetchall()[0][0]
     dance_info = (dauthor[0][0], dtype[0][0], dset[0][0], dcpls[0][0], medley, dname[0][0])
     i = 0
@@ -153,11 +155,11 @@ def get_data(danceid):
     return dance_info, cribs
 
 
-def get_image(id):
-    png_url = "https://my.strathspey.org/dd/diagram/%s/" + str(id) + "/?f=png&w=800"
+def get_image(danceid):
+    png_url = "https://my.strathspey.org/dd/diagram/%s/" + str(danceid) + "/?f=png&w=800"
     for ctype in ['kr', 'scddb']:
         request = requests.get(png_url % ctype)
-        if (request.status_code == 200):
+        if request.status_code == 200:
             return png_url % ctype
     return False
 
