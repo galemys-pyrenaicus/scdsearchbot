@@ -67,7 +67,6 @@ def get_list(message):
         for row in cursor.execute("SELECT name, id FROM dance WHERE ucname LIKE ?", ('%'+name.replace('\'', '').upper()+'%',)):
             button_list.append(InlineKeyboardButton(str(row[0]), callback_data=str(row[1])))
         reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=1))
-        print(button_list[0].callback_data)
         if not button_list:
             bot.send_message(message.from_user.id, 'No dance found. Please, try again')
         else:
@@ -76,13 +75,16 @@ def get_list(message):
             else:
                 bot.send_message(message.from_user.id, 'Choose the dance:', reply_markup=reply_markup)
     except Exception as e:
-        print(str(e))
         bot.send_message(message.from_user.id, 'Too many dances, please specify the search query')
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-    send_res_msg(call.data, call.from_user.id)
+    try:
+        send_res_msg(call.data, call.from_user.id)
+    except Exception as e:
+        logging.error(str(e))
+        bot.send_message(call.from_user.id, 'An error accured, sorry, this dance seem to be broken')
 
 
 def send_res_msg(danceid, chatid):
@@ -138,8 +140,10 @@ def get_data(danceid):
     medley_query = "select medleytype.description from dance join medleytype on dance.medleytype_id = medleytype.id where dance.id = '%s'" % danceid
     # ---------------------------------------------------#
     dancelist = cursor.execute(dancelist_query).fetchall()
+
     for row in dancelist:
         src_list = src_list + str(row[0]) + ','  # -------Getting list on cribs' id for cribsources query
+
     cribsources = cursor.execute(cribsrc_query % (src_list[:-1])).fetchall()
     dauthor = cursor.execute(author_query).fetchall()
     dtype = cursor.execute(type_query).fetchall()
@@ -148,7 +152,23 @@ def get_data(danceid):
     dname = cursor.execute(dname_query).fetchall()
     if dtype[0][1] == 4:
         medley = cursor.execute(medley_query).fetchall()[0][0]
-    dance_info = (dauthor[0][0], dtype[0][0], dset[0][0], dcpls[0][0], medley, dname[0][0])
+    if len(dset):
+        fset = dset[0][0]
+    else:
+        fset = "N/A"
+    if len(dcpls):
+        fcpls = dcpls[0][0]
+    else:
+        fcpls = "N/A"
+    if len(dauthor):
+        fauthor = dauthor[0][0]
+    else:
+        fauthor = "N/A"
+    if len(dtype):
+        ftype = dtype[0][0]
+    else:
+        ftype = "N/A"
+    dance_info = (fauthor, ftype, fset, fcpls, medley, dname[0][0])
     i = 0
     for row in dancelist:  # ---------Concatenating crib texts and crib sources to one list
         cribs.append((cribsources[i][0], row[1]))
@@ -184,7 +204,6 @@ def get_nice_crib(cribs):
     crib = re.sub(r'([0-9].*::)(.*)', r'*\1*\2', crib)
     crib = re.sub(r'(\\\_while\\\_\\\{[0-9]*\\\})', r'*\1*', crib)
     crib = re.sub(r'(\\\_while\\\{[0-9]*\\\}\\\_)', r'*\1*', crib)
-    print(crib)
     return crib
 
 
